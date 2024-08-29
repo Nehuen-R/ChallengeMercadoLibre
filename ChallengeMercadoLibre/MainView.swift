@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import OSLog
 
 struct Categories: Codable {
     let id: String
@@ -21,11 +22,11 @@ struct Item: Codable {
     let id: String
     let title: String
     let seller: Seller?
-    let condition: Condition
+    let condition: Condition?
     let thumbnail: String?
     let price: Double?
     let originalPrice: Double?
-    let currency_id: Currency
+    let currency_id: Currency?
     let available_quantity: Int
     let shipping: Shipping
     let attributes: [Attributes]
@@ -36,8 +37,48 @@ struct Item: Codable {
             return "Nuevo"
         case .used:
             return "Usado"
+        case .notSpecified:
+            return "No especificado"
+        default:
+            return ""
         }
     }
+    
+    static let emptyItems: [Item] = [
+        Item(id: "1",
+            title: "Skeleton",
+            seller: Seller(id: 1, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency_id: Currency.ars,
+            available_quantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+        Item(id: "2",
+            title: "Skeleton",
+            seller: Seller(id: 2, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency_id: Currency.ars,
+            available_quantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+        Item(id: "3",
+            title: "Skeleton",
+            seller: Seller(id: 3, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency_id: Currency.ars,
+            available_quantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+    ]
 }
 
 enum Currency: String, Codable {
@@ -48,6 +89,7 @@ enum Currency: String, Codable {
 enum Condition: String, Codable {
     case new = "new"
     case used = "used"
+    case notSpecified = "not_specified"
 }
 
 struct Shipping: Codable {
@@ -69,15 +111,16 @@ enum MainState: Equatable {
     static func == (lhs: MainState, rhs: MainState) -> Bool {
         switch (lhs, rhs) {
         case (.loading, .loading),
-            (.error, .error),
-            (.ready, .ready):
+            (.error(_, _), .error(_, _)),
+            (.ready(_), .ready(_)):
             return true
         default:
             return false
         }
     }
     
-    case loading, error
+    case loading
+    case error(error: Error, url: String)
     case ready(data: [Categories])
 }
 
@@ -85,26 +128,93 @@ enum SearchState: Equatable {
     static func == (lhs: SearchState, rhs: SearchState) -> Bool {
         switch (lhs, rhs) {
         case (.loading, .loading),
-            (.error, .error),
-            (.ready, .ready):
+            (.error(_, _), .error(_, _)),
+            (.ready(_), .ready(_)):
             return true
         default:
             return false
         }
     }
     
-    case loading, error
+    case loading
+    case error(error: Error, url: String)
     case ready(data: ListItems)
+}
+
+enum CarrouselState: Equatable {
+    static func == (lhs: CarrouselState, rhs: CarrouselState) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading),
+            (.empty, .empty),
+            (.error(_, _, _), .error(_, _, _)),
+            (.ready(_), .ready(_)):
+            return true
+        default:
+            return false
+        }
+    }
+    
+    case loading, empty
+    case error(error: Error, errorString: String, urlForErrorRetry: String)
+    case ready(data: [Item]?)
+}
+
+enum getErrors: Error {
+    case invalidUrl
+    case invalidResponse
+    case decodeError
+    case emptyError
+}
+
+extension Logger {
+    private static var subsystem = Bundle.main.bundleIdentifier!
+    
+    static let getErrors = Logger(subsystem: subsystem, category: "API_GET_ERRORS")
 }
 
 class Networking {
     static var shared = Networking()
     
     func apiGet<T: Codable>(with: T.Type, url: String) async throws -> T {
-        let url = URL(string: url)!
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let decoder = JSONDecoder()
-        return try! decoder.decode(T.self, from: data)
+        guard let url = URL(string: url) else {
+            Logger.getErrors.fault("Invalid URL")
+            throw getErrors.invalidUrl
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw getErrors.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            Logger.getErrors.fault("Invalid Response: \(httpResponse.statusCode)")
+            throw getErrors.invalidResponse
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode(T.self, from: data)
+        } catch let DecodingError.dataCorrupted(context) {
+            Logger.getErrors.debug("\(url)")
+            Logger.getErrors.fault("dataCorrupted \(context.debugDescription)")
+            throw getErrors.decodeError
+        } catch let DecodingError.keyNotFound(key, context) {
+            Logger.getErrors.debug("\(url)")
+            Logger.getErrors.fault("Key '\(key.stringValue)' not found \(context.debugDescription)")
+            throw getErrors.decodeError
+        } catch let DecodingError.valueNotFound(value, context) {
+            Logger.getErrors.debug("\(url)")
+            Logger.getErrors.fault("Value '\(value)' not found \(context.debugDescription)")
+            throw getErrors.decodeError
+        } catch let DecodingError.typeMismatch(type, context) {
+            Logger.getErrors.fault("Type '\(type)' mismatch: \(context.debugDescription)")
+            throw getErrors.decodeError
+        } catch {
+            Logger.getErrors.fault("error: \(error)")
+            throw getErrors.decodeError
+        }
+        
     }
 }
 
@@ -115,6 +225,62 @@ class NavigationViewModel: ObservableObject {
     @Published var navigationIsActive: Bool = false
 }
 
+struct ShimmerConfiguration {
+    public let gradient: Gradient
+    public let initialLocation: (start: UnitPoint, end: UnitPoint)
+    public let finalLocation: (start: UnitPoint, end: UnitPoint)
+    public let duration: TimeInterval
+    
+    static let defaultConfiguration: ShimmerConfiguration = .init(gradient: Gradient.init(colors: [.black.opacity(0.1), .black, .black.opacity(0.1)]),
+                                                                  initialLocation: (start: UnitPoint(x: -1, y: 0.5), end: .leading),
+                                                                  finalLocation: (start: .trailing, end: UnitPoint(x: 2, y: 0.5)),
+                                                                  duration: 2)
+}
+
+struct ShimmeringView<Content: View>: View {
+  private let content: () -> Content
+  private let configuration: ShimmerConfiguration
+  @State private var startPoint: UnitPoint
+  @State private var endPoint: UnitPoint
+  init(configuration: ShimmerConfiguration, @ViewBuilder content: @escaping () -> Content) {
+    self.configuration = configuration
+    self.content = content
+      _startPoint = .init(wrappedValue: configuration.initialLocation.start)
+    _endPoint = .init(wrappedValue: configuration.initialLocation.end)
+  }
+  var body: some View {
+      content()
+          .mask {
+              LinearGradient(
+                gradient: configuration.gradient,
+                startPoint: startPoint,
+                endPoint: endPoint
+              )
+              .blendMode(.screen)
+          }
+          .onAppear {
+              withAnimation(Animation.linear(duration: configuration.duration).repeatForever(autoreverses: false)) {
+                  startPoint = configuration.finalLocation.start
+                  endPoint = configuration.finalLocation.end
+              }
+          }
+  }
+}
+
+struct ShimmerModifier: ViewModifier {
+  let configuration: ShimmerConfiguration
+  public func body(content: Content) -> some View {
+    ShimmeringView(configuration: configuration) { content }
+  }
+}
+
+
+extension View {
+    func shimmer(configuration: ShimmerConfiguration = .defaultConfiguration) -> some View {
+        modifier(ShimmerModifier(configuration: configuration))
+    }
+}
+
 class MainServiceManager {
     private (set) var mainState = CurrentValueSubject<MainState, Never>(.loading)
     
@@ -123,12 +289,14 @@ class MainServiceManager {
     }
     
     func getCategories() {
+        mainState.send(.loading)
         Task {
             do {
                 let categories = try await Networking.shared.apiGet(with: [Categories].self, url: "https://api.mercadolibre.com/sites/MLA/categories")
                 processData(data: categories)
-            } catch {
-                mainState.send(.error)
+            } catch let error {
+                Logger.getErrors.fault("Error: \(error)")
+                mainState.send(.error(error: error, url: "https://api.mercadolibre.com/sites/MLA/categories"))
             }
         }
     }
@@ -142,13 +310,15 @@ class SearchServiceManager {
     }
     
     func getSearchedData(searchText: String) {
+        searchState.send(.loading)
         Task {
+            let searchTextSpaced = searchText.replacingOccurrences(of: " ", with: "%20")
             do {
-                let searchTextSpaced = searchText.replacingOccurrences(of: " ", with: "%20")
                 let listItems = try await Networking.shared.apiGet(with: ListItems.self, url: "https://api.mercadolibre.com/sites/MLA/search?q=\(searchTextSpaced)")
                 processData(data: listItems)
-            } catch {
-                searchState.send(.error)
+            } catch let error {
+                Logger.getErrors.fault("Error: \(error)")
+                searchState.send(.error(error: error, url: "https://api.mercadolibre.com/sites/MLA/search?q=\(searchTextSpaced)"))
             }
         }
     }
@@ -171,6 +341,9 @@ class MainViewModel: ObservableObject {
     
     @Published var searched: Bool = false
     
+    @Published var error: Error = getErrors.emptyError
+    @Published var urlErrorForRetry: String = ""
+    
     var isSearching: Bool {
         searchText.isEmpty
     }
@@ -187,8 +360,9 @@ class MainViewModel: ObservableObject {
                 switch state {
                 case .loading:
                     break
-                case .error:
-                    break
+                case let .error(error, urlErrorForRetry):
+                    self?.error = error
+                    self?.urlErrorForRetry = urlErrorForRetry
                 case .ready(let data):
                     self?.categories = data
                 }
@@ -202,8 +376,9 @@ class MainViewModel: ObservableObject {
                 switch state {
                 case .loading:
                     break
-                case .error:
-                    break
+                case let .error(error, urlErrorForRetry):
+                    self?.error = error
+                    self?.urlErrorForRetry = urlErrorForRetry
                 case .ready(let data):
                     self?.searchData = data
                 }
@@ -219,6 +394,35 @@ class MainViewModel: ObservableObject {
     
     func getItemsBySearchText(searchText: String) {
         searchServiceManager.getSearchedData(searchText: searchText)
+    }
+}
+
+struct ErrorView: View {
+    var error: Error
+    var errorString: String = ""
+    var retryAction: () -> Void
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Image(systemName: "xmark.circle")
+                    .foregroundStyle(.primary)
+                Text("Ocurrio un error inesperado\( errorString), por favor intenta de nuevo mas tarde")
+            }
+            Text("O")
+            Button(action:{
+                retryAction()
+            }){
+                Text("Reintentar")
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Material.thick)
+                    }
+            }
+            Spacer()
+        }
     }
 }
 
@@ -271,7 +475,9 @@ struct MainView: View {
                                     Spacer()
                                     HStack {
                                         Spacer()
-                                        Text("Searching...")
+                                        ProgressView()
+                                            .tint(.primary)
+                                            .scaleEffect(2)
                                         Spacer()
                                     }
                                     Spacer()
@@ -280,10 +486,8 @@ struct MainView: View {
                         }
                         
                     case .error:
-                        VStack {
-                            Spacer()
-                            Text("error...")
-                            Spacer()
+                        ErrorView(error: viewModel.error) {
+                            viewModel.getItemsBySearchText(searchText: viewModel.urlErrorForRetry)
                         }
                     case .ready:
                         LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 150), spacing: 5), count: 2)) {
@@ -298,19 +502,19 @@ struct MainView: View {
                     case .loading:
                         VStack {
                             Spacer()
-                            Text("loading...")
+                            ProgressView()
+                                .tint(.primary)
+                                .scaleEffect(2)
                             Spacer()
                         }
                     case .error:
-                        VStack {
-                            Spacer()
-                            Text("error...")
-                            Spacer()
+                        ErrorView(error: viewModel.error) {
+                            viewModel.getCategories()
                         }
                     case .ready:
                         LazyVStack {
                             ForEach(viewModel.categories, id: \.id) { category in
-                                Carrousel(category: category)
+                                Carrousel(viewModel: CarrouselViewModel(category: category))
                             }
                         }
                     }
@@ -407,20 +611,149 @@ struct MainView: View {
     MainView()
 }
 
+class CarrouselViewModel: ObservableObject {
+    var category: Categories
+    @Published var listItems: [Item]?
+    
+    private var cancellableBag = Set<AnyCancellable>()
+    
+    private let carrouselServiceManager = CarrouselServiceManager()
+    @Published var carrouselState: CarrouselState = .loading
+    
+    @Published var error: Error = getErrors.emptyError
+    @Published var errorString: String = ""
+    @Published var urlForErrorRetry: String = ""
+    
+    init(category: Categories) {
+        self.category = category
+        
+        initServices()
+        
+        getCarrouselData(category: category)
+    }
+    
+    func initServices() {
+        carrouselServiceManager.carrouselState.sink { [weak self] state in
+            DispatchQueue.main.async {
+                switch state {
+                case .loading:
+                    break
+                case .empty:
+                    self?.listItems = []
+                case let .error(error, errorString, urlForErrorRetry):
+                    self?.error = error
+                    self?.errorString = errorString
+                    self?.urlForErrorRetry = urlForErrorRetry
+                case let .ready(data):
+                    self?.listItems = data
+                }
+                self?.carrouselState = state
+            }
+        }
+        .store(in: &cancellableBag)
+    }
+    
+    func getCarrouselData(category: Categories) {
+        carrouselServiceManager.getCarrouselData(category: category)
+    }
+}
+
+class CarrouselServiceManager {
+    private (set) var carrouselState = CurrentValueSubject<CarrouselState, Never>(.loading)
+    
+    func processData(data: [Item]?) {
+        if data?.count ?? 0 > 0 {
+            carrouselState.send(.ready(data: data))
+        } else {
+            carrouselState.send(.empty)
+        }
+    }
+    
+    func getCarrouselData(category: Categories) {
+        carrouselState.send(.loading)
+        Task {
+            do {
+                let listItems = try await Networking.shared.apiGet(with: ListItems.self, url: "https://api.mercadolibre.com/sites/MLA/search?category=\(category.id)")
+                processData(data: listItems.results ?? [])
+            } catch let error {
+                Logger.getErrors.fault("Error: \(error)")
+                carrouselState.send(.error(error: getErrors.decodeError,
+                                           errorString: " al cargar la informacion \(category.name)",
+                                           urlForErrorRetry: "https://api.mercadolibre.com/sites/MLA/search?category=\(category.id)"))
+            }
+        }
+    }
+}
+
 struct Carrousel: View {
     @Environment(\.colorScheme) var colorScheme
-    @State var category: Categories
-    @State private var listItems: ListItems = .init(results: [])
+    @StateObject var viewModel: CarrouselViewModel
     @StateObject var navigationViewModel = NavigationViewModel.shared
     
     var body: some View {
+        switch viewModel.carrouselState {
+        case .loading:
+            section(isMock: true, listItems: Item.emptyItems)
+        case .empty:
+            VStack {}
+        case .error:
+            section(error: true)
+        case .ready:
+            section()
+        }
+    }
+    
+    @ViewBuilder func section(isMock: Bool = false, error: Bool = false, listItems: [Item]? = []) -> some View {
         VStack(alignment: .leading) {
-            Button(action: {
-                navigationViewModel.navigateTo = AnyView(ItemsByCategory(title: category.name, listItems: listItems))
-                navigationViewModel.navigationIsActive = true
-            }) {
+            if isMock {
+                    HStack {
+                        Text(viewModel.category.name)
+                            .foregroundStyle(colorScheme == .light ? .black : .white)
+                            .redacted(reason: .placeholder)
+                            .shimmer()
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.gray)
+                            .redacted(reason: .placeholder)
+                            .shimmer()
+                    }
+                    .font(.headline)
+                    .bold()
+                    .padding(.bottom)
+                ScrollView(.horizontal) {
+                    LazyHStack {
+                        ForEach(listItems ?? [], id: \.id) { item in
+                            ItemView(item: item, isMock: isMock)
+                                .disabled(isMock)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            } else if !isMock && !error {
+                Button(action: {
+                    navigationViewModel.navigateTo = AnyView(ItemsByCategory(title: viewModel.category.name, listItems: viewModel.listItems))
+                    navigationViewModel.navigationIsActive = true
+                }) {
+                    HStack {
+                        Text(viewModel.category.name)
+                            .foregroundStyle(colorScheme == .light ? .black : .white)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.gray)
+                    }
+                    .font(.headline)
+                    .bold()
+                    .padding(.bottom)
+                }
+                ScrollView(.horizontal) {
+                    LazyHStack {
+                        ForEach(viewModel.listItems ?? [], id: \.id) { item in
+                            ItemView(item: item)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            } else if error {
                 HStack {
-                    Text(category.name)
+                    Text(viewModel.category.name)
                         .foregroundStyle(colorScheme == .light ? .black : .white)
                     Image(systemName: "chevron.right")
                         .foregroundStyle(.gray)
@@ -428,15 +761,10 @@ struct Carrousel: View {
                 .font(.headline)
                 .bold()
                 .padding(.bottom)
-            }
-            ScrollView(.horizontal) {
-                LazyHStack {
-                    ForEach(listItems.results ?? [], id: \.id) { item in
-                        ItemView(item: item)
-                    }
+                ErrorView(error: viewModel.error, errorString: viewModel.errorString) {
+                    viewModel.getCarrouselData(category: viewModel.category)
                 }
             }
-            .scrollIndicators(.hidden)
         }
         .padding()
         .background(content: {
@@ -444,29 +772,17 @@ struct Carrousel: View {
                 .fill(Material.regular)
         })
         .padding()
-        .onAppear {
-            Task {
-                listItems = await apiGet(with: ListItems.self, url: "https://api.mercadolibre.com/sites/MLA/search?category=\(category.id)")
-            }
-        }
-    }
-    
-    func apiGet<T: Codable>(with: T.Type, url: String) async -> T {
-        let url = URL(string: url)!
-        let (data, _) = try! await URLSession.shared.data(from: url)
-        let decoder = JSONDecoder()
-        return try! decoder.decode(T.self, from: data)
     }
 }
 
 struct ItemsByCategory: View {
     @State var title: String
-    @State var listItems: ListItems
+    @State var listItems: [Item]?
     
     var body: some View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 150), spacing: 5), count: 2)) {
-                ForEach(listItems.results ?? [], id: \.id) { item in
+                ForEach(listItems ?? [], id: \.id) { item in
                     ItemView(item: item)
                 }
             }
@@ -479,32 +795,111 @@ struct ItemsByCategory: View {
 
 struct ItemView: View {
     @State var item: Item
+    var isMock: Bool = false
     @StateObject var navigationViewModel = NavigationViewModel.shared
     
     var body: some View {
-        Button(action: {
-            navigationViewModel.navigateTo = AnyView(DetailView(item: item))
-            navigationViewModel.navigationIsActive = true
-        }) {
-            VStack {
-                VStack {
-                    AsyncImage(url: URL(string: item.thumbnail ?? "")) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
-                    } placeholder: {
+        if isMock {
+            VStack(alignment: .leading) {
+                VStack(alignment: .leading) {
+                    VStack(alignment: .center) {
                         ProgressView()
                             .tint(.black)
-                            .frame(width: 100, height: 100)
+                            .frame(width: 160, height: 100)
                     }
-                    VStack(alignment: .leading) {
+                    HStack {
+                        VStack(alignment: .leading) {
                             Text(item.title)
                                 .font(.footnote)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                                 .foregroundStyle(.black)
-                        if item.originalPrice != nil {
+                                .redacted(reason: .placeholder)
+                                .shimmer()
+                            if item.originalPrice != nil {
+                                if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
+                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                                        .font(.footnote)
+                                        .foregroundStyle(.gray)
+                                        .overlay {
+                                            Rectangle()
+                                                .fill(.gray)
+                                                .frame(height: 1)
+                                        }
+                                        .redacted(reason: .placeholder)
+                                        .shimmer()
+                                } else {
+                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
+                                        .font(.footnote)
+                                        .foregroundStyle(.gray)
+                                        .overlay {
+                                            Rectangle()
+                                                .fill(.gray)
+                                                .frame(height: 1)
+                                        }
+                                        .redacted(reason: .placeholder)
+                                        .shimmer()
+                                }
+                            }
+                            if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
+                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
+                                    .foregroundStyle(.black)
+                                    .redacted(reason: .placeholder)
+                                    .shimmer()
+                            } else {
+                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
+                                    .foregroundStyle(.black)
+                                    .redacted(reason: .placeholder)
+                                    .shimmer()
+                            }
+                            if item.shipping.free_shipping {
+                                Text("Envio gratis")
+                                    .bold()
+                                    .font(.footnote)
+                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                                    .redacted(reason: .placeholder)
+                                    .shimmer()
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    Spacer()
+                }
+                .padding()
+                .frame(minWidth: 160, minHeight: 220)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(.white)
+            )
+            .frame(width: 160, height: 220)
+        } else {
+            Button(action: {
+                navigationViewModel.navigateTo = AnyView(DetailView(item: item))
+                navigationViewModel.navigationIsActive = true
+            }) {
+                VStack(alignment: .leading) {
+                    VStack(alignment: .leading) {
+                        VStack(alignment: .center) {
+                            AsyncImage(url: URL(string: item.thumbnail ?? "")) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100, height: 100)
+                            } placeholder: {
+                                ProgressView()
+                                    .tint(.black)
+                                    .frame(width: 100, height: 100)
+                            }
+                        }
+                        VStack(alignment: .leading) {
+                            Text(item.title)
+                                .font(.footnote)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                                .foregroundStyle(.black)
+                            if item.originalPrice != nil {
                                 if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
                                     Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
                                         .font(.footnote)
@@ -524,31 +919,32 @@ struct ItemView: View {
                                                 .frame(height: 1)
                                         }
                                 }
+                            }
+                            if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
+                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
+                                    .foregroundStyle(.black)
+                            } else {
+                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
+                                    .foregroundStyle(.black)
+                            }
+                            if item.shipping.free_shipping {
+                                Text("Envio gratis")
+                                    .bold()
+                                    .font(.footnote)
+                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                            }
                         }
-                        if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
-                            Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
-                                .foregroundStyle(.black)
-                        } else {
-                            Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
-                                .foregroundStyle(.black)
-                        }
-                        if item.shipping.free_shipping {
-                            Text("Envio gratis")
-                                .bold()
-                                .font(.footnote)
-                                .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
-                        }
+                        Spacer()
                     }
-                    Spacer()
+                    .padding()
+                    .frame(minWidth: 160, minHeight: 220)
                 }
-                .padding()
-                .frame(minWidth: 160, minHeight: 220)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(.white)
+                )
+                .frame(width: 160, height: 220)
             }
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(.white)
-            )
-            .frame(width: 160, height: 220)
         }
     }
 }
@@ -560,10 +956,12 @@ struct DetailView: View {
         ScrollView {
             VStack(alignment: .leading) {
                 VStack(alignment: .leading) {
-                    Text(item.conditionTraduct)
-                        .font(.footnote)
-                        .foregroundStyle(.gray)
-                        .padding(.bottom, 3)
+                    if item.condition != .notSpecified || item.conditionTraduct != "" {
+                        Text(item.conditionTraduct)
+                            .font(.footnote)
+                            .foregroundStyle(.gray)
+                            .padding(.bottom, 3)
+                    }
                     
                     HStack {
                         Text(item.title)
