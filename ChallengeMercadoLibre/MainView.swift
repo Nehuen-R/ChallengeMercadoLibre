@@ -111,7 +111,7 @@ enum MainState: Equatable {
     static func == (lhs: MainState, rhs: MainState) -> Bool {
         switch (lhs, rhs) {
         case (.loading, .loading),
-            (.error(_, _), .error(_, _)),
+            (.error(_, _, _), .error(_, _, _)),
             (.ready(_), .ready(_)):
             return true
         default:
@@ -120,29 +120,12 @@ enum MainState: Equatable {
     }
     
     case loading
-    case error(error: Error, url: String)
+    case error(error: Error, errorString: String, url: String)
     case ready(data: [Categories])
 }
 
 enum SearchState: Equatable {
     static func == (lhs: SearchState, rhs: SearchState) -> Bool {
-        switch (lhs, rhs) {
-        case (.loading, .loading),
-            (.error(_, _), .error(_, _)),
-            (.ready(_), .ready(_)):
-            return true
-        default:
-            return false
-        }
-    }
-    
-    case loading
-    case error(error: Error, url: String)
-    case ready(data: ListItems)
-}
-
-enum CarrouselState: Equatable {
-    static func == (lhs: CarrouselState, rhs: CarrouselState) -> Bool {
         switch (lhs, rhs) {
         case (.loading, .loading),
             (.empty, .empty),
@@ -155,6 +138,23 @@ enum CarrouselState: Equatable {
     }
     
     case loading, empty
+    case error(error: Error, errorString: String, url: String)
+    case ready(data: ListItems)
+}
+
+enum CarrouselState: Equatable {
+    static func == (lhs: CarrouselState, rhs: CarrouselState) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading),
+            (.error(_, _, _), .error(_, _, _)),
+            (.ready(_), .ready(_)):
+            return true
+        default:
+            return false
+        }
+    }
+    
+    case loading
     case error(error: Error, errorString: String, urlForErrorRetry: String)
     case ready(data: [Item]?)
 }
@@ -184,6 +184,7 @@ class Networking {
         let (data, response) = try await URLSession.shared.data(from: url)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            Logger.getErrors.fault("Invalid Response for \(url)")
             throw getErrors.invalidResponse
         }
         
@@ -296,7 +297,9 @@ class MainServiceManager {
                 processData(data: categories)
             } catch let error {
                 Logger.getErrors.fault("Error: \(error)")
-                mainState.send(.error(error: error, url: "https://api.mercadolibre.com/sites/MLA/categories"))
+                mainState.send(.error(error: error,
+                                      errorString: " al cargar la informacion de las categorias",
+                                      url: "https://api.mercadolibre.com/sites/MLA/categories"))
             }
         }
     }
@@ -306,7 +309,11 @@ class SearchServiceManager {
     private (set) var searchState = CurrentValueSubject<SearchState, Never>(.loading)
     
     func processData(data: ListItems) {
-        searchState.send(.ready(data: data))
+        if data.results?.count ?? 0 > 0 {
+            searchState.send(.ready(data: data))
+        } else {
+            searchState.send(.empty)
+        }
     }
     
     func getSearchedData(searchText: String) {
@@ -318,7 +325,9 @@ class SearchServiceManager {
                 processData(data: listItems)
             } catch let error {
                 Logger.getErrors.fault("Error: \(error)")
-                searchState.send(.error(error: error, url: "https://api.mercadolibre.com/sites/MLA/search?q=\(searchTextSpaced)"))
+                searchState.send(.error(error: error,
+                                        errorString: " al realizar la busqueda",
+                                        url: "https://api.mercadolibre.com/sites/MLA/search?q=\(searchTextSpaced)"))
             }
         }
     }
@@ -342,6 +351,7 @@ class MainViewModel: ObservableObject {
     @Published var searched: Bool = false
     
     @Published var error: Error = getErrors.emptyError
+    @Published var errorString: String = ""
     @Published var urlErrorForRetry: String = ""
     
     var isSearching: Bool {
@@ -360,8 +370,9 @@ class MainViewModel: ObservableObject {
                 switch state {
                 case .loading:
                     break
-                case let .error(error, urlErrorForRetry):
+                case let .error(error, errorString, urlErrorForRetry):
                     self?.error = error
+                    self?.errorString = errorString
                     self?.urlErrorForRetry = urlErrorForRetry
                 case .ready(let data):
                     self?.categories = data
@@ -374,10 +385,11 @@ class MainViewModel: ObservableObject {
         searchServiceManager.searchState.sink { [weak self] state in
             DispatchQueue.main.async {
                 switch state {
-                case .loading:
+                case .loading, .empty:
                     break
-                case let .error(error, urlErrorForRetry):
+                case let .error(error, errorString, urlErrorForRetry):
                     self?.error = error
+                    self?.errorString = errorString
                     self?.urlErrorForRetry = urlErrorForRetry
                 case .ready(let data):
                     self?.searchData = data
@@ -470,21 +482,20 @@ struct MainView: View {
                                     }
                                     .padding()
                                 }
-                            } else {
+                            } else if viewModel.searched {
                                 VStack {
-                                    Spacer()
-                                    HStack {
-                                        Spacer()
-                                        ProgressView()
-                                            .tint(.primary)
-                                            .scaleEffect(2)
-                                        Spacer()
-                                    }
-                                    Spacer()
+                                    ProgressView()
+                                        .tint(.primary)
+                                        .scaleEffect(2)
                                 }
+                                .padding()
                             }
                         }
-                        
+                    case .empty:
+                        VStack {
+                            Text("No se encontraron productos para la búsqueda: ‘\(viewModel.searchText)’. ")
+                        }
+                        .padding()
                     case .error:
                         ErrorView(error: viewModel.error) {
                             viewModel.getItemsBySearchText(searchText: viewModel.urlErrorForRetry)
@@ -501,16 +512,16 @@ struct MainView: View {
                     switch viewModel.mainState {
                     case .loading:
                         VStack {
-                            Spacer()
                             ProgressView()
                                 .tint(.primary)
                                 .scaleEffect(2)
-                            Spacer()
                         }
+                        .padding()
                     case .error:
                         ErrorView(error: viewModel.error) {
                             viewModel.getCategories()
                         }
+                        .padding()
                     case .ready:
                         LazyVStack {
                             ForEach(viewModel.categories, id: \.id) { category in
@@ -540,6 +551,7 @@ struct MainView: View {
                                         Button {
                                             viewModel.searchText = ""
                                             focusSearch = true
+                                            viewModel.searched = false
                                             viewModel.searchData = .init(results: [])
                                             viewModel.searchState = .loading
                                         } label: {
@@ -573,6 +585,7 @@ struct MainView: View {
                 focusSearch = false
             })
             .onSubmit {
+                viewModel.searched = true
                 focusSearch = false
                 viewModel.getItemsBySearchText(searchText: viewModel.searchText)
                 if !viewModel.searchedDataSave.contains(where: {
@@ -638,8 +651,6 @@ class CarrouselViewModel: ObservableObject {
                 switch state {
                 case .loading:
                     break
-                case .empty:
-                    self?.listItems = []
                 case let .error(error, errorString, urlForErrorRetry):
                     self?.error = error
                     self?.errorString = errorString
@@ -664,8 +675,6 @@ class CarrouselServiceManager {
     func processData(data: [Item]?) {
         if data?.count ?? 0 > 0 {
             carrouselState.send(.ready(data: data))
-        } else {
-            carrouselState.send(.empty)
         }
     }
     
@@ -694,8 +703,6 @@ struct Carrousel: View {
         switch viewModel.carrouselState {
         case .loading:
             section(isMock: true, listItems: Item.emptyItems)
-        case .empty:
-            VStack {}
         case .error:
             section(error: true)
         case .ready:
