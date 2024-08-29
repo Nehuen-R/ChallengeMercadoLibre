@@ -20,7 +20,7 @@ struct ListItems: Codable {
 struct Item: Codable {
     let id: String
     let title: String
-    let seller: Seller
+    let seller: Seller?
     let condition: Condition
     let thumbnail: String?
     let price: Double?
@@ -310,9 +310,7 @@ struct MainView: View {
                     case .ready:
                         LazyVStack {
                             ForEach(viewModel.categories, id: \.id) { category in
-                                Text(category.name)
-                                    .padding()
-                                Carrousel(id: category.id)
+                                Carrousel(category: category)
                             }
                         }
                     }
@@ -321,6 +319,8 @@ struct MainView: View {
             .navigationDestination(isPresented: $navigationViewModel.navigationIsActive, destination: {
                 navigationViewModel.navigateTo
             })
+            .navigationTitle(!viewModel.isSearching || focusSearch ? "Search" : "Categories")
+            .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top, content: {
                 HStack {
                     TextField("Search", text: $viewModel.searchText, prompt: Text("Search..."))
@@ -361,7 +361,7 @@ struct MainView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.thin)
+                        .fill(Material.regular)
                         .ignoresSafeArea(edges: .top)
                 )
             })
@@ -408,22 +408,45 @@ struct MainView: View {
 }
 
 struct Carrousel: View {
-    @State var id: String
+    @Environment(\.colorScheme) var colorScheme
+    @State var category: Categories
     @State private var listItems: ListItems = .init(results: [])
+    @StateObject var navigationViewModel = NavigationViewModel.shared
     
     var body: some View {
-        ScrollView(.horizontal) {
-            LazyHStack {
-                ForEach(listItems.results ?? [], id: \.id) { item in
-                    ItemView(item: item)
+        VStack(alignment: .leading) {
+            Button(action: {
+                navigationViewModel.navigateTo = AnyView(ItemsByCategory(title: category.name, listItems: listItems))
+                navigationViewModel.navigationIsActive = true
+            }) {
+                HStack {
+                    Text(category.name)
+                        .foregroundStyle(colorScheme == .light ? .black : .white)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.gray)
+                }
+                .font(.headline)
+                .bold()
+                .padding(.bottom)
+            }
+            ScrollView(.horizontal) {
+                LazyHStack {
+                    ForEach(listItems.results ?? [], id: \.id) { item in
+                        ItemView(item: item)
+                    }
                 }
             }
-            .padding()
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
+        .padding()
+        .background(content: {
+            RoundedRectangle(cornerRadius: 5)
+                .fill(Material.regular)
+        })
+        .padding()
         .onAppear {
             Task {
-                listItems = await apiGet(with: ListItems.self, url: "https://api.mercadolibre.com/sites/MLA/search?category=\(id)")
+                listItems = await apiGet(with: ListItems.self, url: "https://api.mercadolibre.com/sites/MLA/search?category=\(category.id)")
             }
         }
     }
@@ -433,6 +456,24 @@ struct Carrousel: View {
         let (data, _) = try! await URLSession.shared.data(from: url)
         let decoder = JSONDecoder()
         return try! decoder.decode(T.self, from: data)
+    }
+}
+
+struct ItemsByCategory: View {
+    @State var title: String
+    @State var listItems: ListItems
+    
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 150), spacing: 5), count: 2)) {
+                ForEach(listItems.results ?? [], id: \.id) { item in
+                    ItemView(item: item)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -513,6 +554,7 @@ struct ItemView: View {
 }
 
 struct DetailView: View {
+    @Environment(\.colorScheme) var colorScheme
     var item: Item
     var body: some View {
         ScrollView {
@@ -553,7 +595,7 @@ struct DetailView: View {
                 }
                 
                 HStack {
-                    Text("Vendido por \(item.seller.nickname ?? "")")
+                    Text("Vendido por \(item.seller?.nickname ?? "")")
                         .font(.subheadline)
                         .bold()
                     Spacer()
@@ -564,21 +606,34 @@ struct DetailView: View {
                         .fill(Material.regular)
                 )
                 
-                ForEach(item.attributes, id: \.id) { attributes in
-                    HStack {
-                        Text(attributes.name)
-                            .font(.subheadline)
-                            .bold()
-                        Spacer()
-                        Text(attributes.value_name ?? "")
-                            .font(.subheadline)
+                VStack(alignment: .leading) {
+                    Text("Caracteristicas generales")
+                        .foregroundStyle(colorScheme == .light ? .black : .white)
+                        .font(.headline)
+                        .bold()
+                        .padding()
+                    
+                    ForEach(item.attributes, id: \.id) { attributes in
+                        HStack {
+                            Text(attributes.name)
+                                .font(.subheadline)
+                                .bold()
+                            Spacer()
+                            Text(attributes.value_name ?? "")
+                                .font(.subheadline)
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Material.regular)
+                        )
+                        .padding(.horizontal)
                     }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(Material.regular)
-                    )
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Material.regular)
+                )
             }
             .padding(.horizontal)
         }
