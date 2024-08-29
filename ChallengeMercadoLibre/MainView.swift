@@ -630,6 +630,7 @@ struct DetailView: View {
                         .padding(.horizontal)
                     }
                 }
+                .padding(.bottom)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(Material.regular)
