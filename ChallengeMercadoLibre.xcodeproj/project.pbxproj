@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		06276C752C824B3500073CC5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 06276C742C824B3500073CC5 /* README.md */; };
 		06AE35932C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */; };
 		06AE35972C7FF0A2008326AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35962C7FF0A2008326AD /* Assets.xcassets */; };
 		06AE359A2C7FF0A2008326AD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35992C7FF0A2008326AD /* Preview Assets.xcassets */; };
@@ -34,6 +35,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		06276C742C824B3500073CC5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		06AE358F2C7FF0A1008326AD /* ChallengeMercadoLibre.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChallengeMercadoLibre.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeMercadoLibreApp.swift; sourceTree = "<group>"; };
 		06AE35962C7FF0A2008326AD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 		06AE35862C7FF0A1008326AD = {
 			isa = PBXGroup;
 			children = (
+				06276C742C824B3500073CC5 /* README.md */,
 				06AE35912C7FF0A1008326AD /* ChallengeMercadoLibre */,
 				06AE35A22C7FF0A2008326AD /* ChallengeMercadoLibreTests */,
 				06AE35AC2C7FF0A2008326AD /* ChallengeMercadoLibreUITests */,
@@ -233,6 +236,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				06276C752C824B3500073CC5 /* README.md in Resources */,
 				06AE359A2C7FF0A2008326AD /* Preview Assets.xcassets in Resources */,
 				06AE35972C7FF0A2008326AD /* Assets.xcassets in Resources */,
 			);
@@ -428,6 +432,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChallengeMercadoLibre/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Challenge Mercado Libre";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -462,6 +467,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChallengeMercadoLibre/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Challenge Mercado Libre";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
