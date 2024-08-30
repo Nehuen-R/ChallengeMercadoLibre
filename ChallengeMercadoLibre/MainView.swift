@@ -19,17 +19,45 @@ struct ListItems: Codable {
 }
         
 struct Item: Codable {
-    let id: String
-    let title: String
-    let seller: Seller?
-    let condition: Condition?
-    let thumbnail: String?
-    let price: Double?
-    let originalPrice: Double?
-    let currency_id: Currency?
-    let available_quantity: Int
-    let shipping: Shipping
-    let attributes: [Attributes]
+    var id: String
+    var title: String
+    var seller: Seller?
+    var condition: Condition?
+    var thumbnail: String?
+    var price: Double?
+    var originalPrice: Double?
+    var currency: Currency?
+    var availableQuantity: Int
+    var shipping: Shipping
+    var attributes: [Attributes]
+    
+    init(id: String, title: String, seller: Seller?, condition: Condition?, thumbnail: String?, price: Double?, originalPrice: Double?, currency: Currency?, availableQuantity: Int, shipping: Shipping, attributes: [Attributes]) {
+        self.id = id
+        self.title = title
+        self.seller = seller
+        self.condition = condition
+        self.thumbnail = thumbnail
+        self.price = price
+        self.originalPrice = originalPrice
+        self.currency = currency
+        self.availableQuantity = availableQuantity
+        self.shipping = shipping
+        self.attributes = attributes
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case seller
+        case condition
+        case thumbnail
+        case price
+        case originalPrice = "original_price"
+        case currency = "currency_id"
+        case availableQuantity = "available_quantity"
+        case shipping
+        case attributes
+    }
     
     var conditionTraduct: String {
         switch condition {
@@ -52,8 +80,8 @@ struct Item: Codable {
             thumbnail: "https://placehold.co/100x100",
             price: 100000,
             originalPrice: nil,
-            currency_id: Currency.ars,
-            available_quantity: 10,
+            currency: Currency.ars,
+            availableQuantity: 10,
             shipping: Shipping(free_shipping: true),
             attributes: []),
         Item(id: "2",
@@ -63,8 +91,8 @@ struct Item: Codable {
             thumbnail: "https://placehold.co/100x100",
             price: 100000,
             originalPrice: nil,
-            currency_id: Currency.ars,
-            available_quantity: 10,
+            currency: Currency.ars,
+            availableQuantity: 10,
             shipping: Shipping(free_shipping: true),
             attributes: []),
         Item(id: "3",
@@ -74,11 +102,54 @@ struct Item: Codable {
             thumbnail: "https://placehold.co/100x100",
             price: 100000,
             originalPrice: nil,
-            currency_id: Currency.ars,
-            available_quantity: 10,
+            currency: Currency.ars,
+            availableQuantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+        Item(id: "4",
+            title: "Skeleton",
+            seller: Seller(id: 3, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency: Currency.ars,
+            availableQuantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+        Item(id: "5",
+            title: "Skeleton",
+            seller: Seller(id: 5, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency: Currency.ars,
+            availableQuantity: 10,
+            shipping: Shipping(free_shipping: true),
+            attributes: []),
+        Item(id: "6",
+            title: "Skeleton",
+            seller: Seller(id: 6, nickname: "Skeleton"),
+            condition: Condition.notSpecified,
+            thumbnail: "https://placehold.co/100x100",
+            price: 100000,
+            originalPrice: nil,
+            currency: Currency.ars,
+            availableQuantity: 10,
             shipping: Shipping(free_shipping: true),
             attributes: []),
     ]
+    
+    var percentage: Int {
+        guard let originalPrice = originalPrice, originalPrice > 0, let price = price else {
+            return 0
+        }
+        
+        let discount = originalPrice - price
+        let discountPercentage = (discount / originalPrice) * 100
+        return Int(discountPercentage)
+    }
 }
 
 enum Currency: String, Codable {
@@ -420,9 +491,9 @@ struct ErrorView: View {
             HStack {
                 Image(systemName: "xmark.circle")
                     .foregroundStyle(.primary)
-                Text("Ocurrio un error inesperado\( errorString), por favor intenta de nuevo mas tarde")
+                Text("Ocurrio un error inesperado\( errorString)")
             }
-            Text("O")
+            Text("Por favor intenta de nuevo mas tarde")
             Button(action:{
                 retryAction()
             }){
@@ -518,7 +589,7 @@ struct MainView: View {
                         }
                         .padding()
                     case .error:
-                        ErrorView(error: viewModel.error) {
+                        ErrorView(error: viewModel.error, errorString: viewModel.errorString) {
                             viewModel.getCategories()
                         }
                         .padding()
@@ -578,7 +649,7 @@ struct MainView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(Material.regular)
-                        .ignoresSafeArea(edges: .top)
+                        .ignoresSafeArea(edges: .all)
                 )
             })
             .onAppear(perform: {
@@ -610,7 +681,7 @@ struct MainView: View {
                     }
                 }
             })
-            .scrollDismissesKeyboard(.immediately)
+            .scrollDismissesKeyboard(.interactively)
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(Material.thin)
@@ -807,7 +878,6 @@ struct ItemView: View {
     
     var body: some View {
         if isMock {
-            VStack(alignment: .leading) {
                 VStack(alignment: .leading) {
                     VStack(alignment: .center) {
                         ProgressView()
@@ -825,7 +895,7 @@ struct ItemView: View {
                                 .shimmer()
                             if item.originalPrice != nil {
                                 if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
-                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                                    Text("\(item.currency == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
                                         .font(.footnote)
                                         .foregroundStyle(.gray)
                                         .overlay {
@@ -836,7 +906,7 @@ struct ItemView: View {
                                         .redacted(reason: .placeholder)
                                         .shimmer()
                                 } else {
-                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
+                                    Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
                                         .font(.footnote)
                                         .foregroundStyle(.gray)
                                         .overlay {
@@ -849,12 +919,12 @@ struct ItemView: View {
                                 }
                             }
                             if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
-                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
                                     .foregroundStyle(.black)
                                     .redacted(reason: .placeholder)
                                     .shimmer()
                             } else {
-                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
                                     .foregroundStyle(.black)
                                     .redacted(reason: .placeholder)
                                     .shimmer()
@@ -875,20 +945,19 @@ struct ItemView: View {
                 }
                 .padding()
                 .frame(minWidth: 160, minHeight: 220)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(.white)
-            )
-            .frame(width: 160, height: 220)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(.white)
+                )
+                .frame(width: 160, height: 220)
         } else {
             Button(action: {
                 navigationViewModel.navigateTo = AnyView(DetailView(item: item))
                 navigationViewModel.navigationIsActive = true
             }) {
-                VStack(alignment: .leading) {
                     VStack(alignment: .leading) {
-                        VStack(alignment: .center) {
+                        HStack {
+                            Spacer()
                             AsyncImage(url: URL(string: item.thumbnail ?? "")) { image in
                                 image
                                     .resizable()
@@ -899,58 +968,71 @@ struct ItemView: View {
                                     .tint(.black)
                                     .frame(width: 100, height: 100)
                             }
+                            Spacer()
                         }
-                        VStack(alignment: .leading) {
-                            Text(item.title)
-                                .font(.footnote)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .foregroundStyle(.black)
-                            if item.originalPrice != nil {
-                                if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
-                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                        Text(item.title)
+                            .font(.caption)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .foregroundStyle(.black)
+                            .frame(height: 35)
+                        if item.originalPrice != nil {
+                            if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                                    .font(.caption)
+                                    .foregroundStyle(.gray)
+                                    .overlay {
+                                        Rectangle()
+                                            .fill(.gray)
+                                            .frame(height: 1)
+                                    }
+                            } else {
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
+                                    .font(.caption)
+                                    .foregroundStyle(.gray)
+                                    .overlay {
+                                        Rectangle()
+                                            .fill(.gray)
+                                            .frame(height: 1)
+                                    }
+                            }
+                        }
+                        if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
+                            HStack {
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.0f")")
+                                    .foregroundStyle(.black)
+                                if item.originalPrice != nil {
+                                    Text("\(item.percentage)%")
                                         .font(.footnote)
-                                        .foregroundStyle(.gray)
-                                        .overlay {
-                                            Rectangle()
-                                                .fill(.gray)
-                                                .frame(height: 1)
-                                        }
-                                } else {
-                                    Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
-                                        .font(.footnote)
-                                        .foregroundStyle(.gray)
-                                        .overlay {
-                                            Rectangle()
-                                                .fill(.gray)
-                                                .frame(height: 1)
-                                        }
+                                        .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
                                 }
                             }
-                            if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
-                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.2f")")
+                        } else {
+                            HStack {
+                                Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
                                     .foregroundStyle(.black)
-                            } else {
-                                Text("\(item.currency_id == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
-                                    .foregroundStyle(.black)
+                                if item.originalPrice != nil {
+                                    Text("\(item.percentage)%")
+                                        .font(.footnote)
+                                        .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                                }
                             }
-                            if item.shipping.free_shipping {
-                                Text("Envio gratis")
-                                    .bold()
-                                    .font(.footnote)
-                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
-                            }
+                        }
+                        if item.shipping.free_shipping {
+                            Text("Envio gratis")
+                                .bold()
+                                .font(.footnote)
+                                .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
                         }
                         Spacer()
                     }
-                    .padding()
-                    .frame(minWidth: 160, minHeight: 220)
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(.white)
-                )
-                .frame(width: 160, height: 220)
+                    .padding([.horizontal, .top])
+                    .frame(minWidth: 160, minHeight: 240)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(.white)
+                    )
+                    .frame(width: 160, height: 240)
             }
         }
     }
@@ -998,6 +1080,67 @@ struct DetailView: View {
                         .tint(.black)
                         .frame(height: 300)
                 }
+                
+                VStack(alignment: .leading) {
+                    if item.originalPrice != nil {
+                        if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
+                            Text("\(item.currency == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                                .font(.subheadline)
+                                .foregroundStyle(.gray)
+                                .overlay {
+                                    Rectangle()
+                                        .fill(.gray)
+                                        .frame(height: 1)
+                                }
+                        } else {
+                            Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
+                                .font(.subheadline)
+                                .foregroundStyle(.gray)
+                                .overlay {
+                                    Rectangle()
+                                        .fill(.gray)
+                                        .frame(height: 1)
+                                }
+                        }
+                    }
+                    if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
+                        HStack {
+                            Text("\(item.currency == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.0f")")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                            if item.originalPrice != nil {
+                                Text("\(item.percentage)%")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                            }
+                            Spacer()
+                        }
+                    } else {
+                        HStack {
+                            Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                            if item.originalPrice != nil {
+                                Text("\(item.percentage)%")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                            }
+                            Spacer()
+                        }
+                    }
+                    if item.shipping.free_shipping {
+                        Text("Envio gratis")
+                            .bold()
+                            .font(.footnote)
+                            .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                    }
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Material.regular)
+                )
+                
                 
                 HStack {
                     Text("Vendido por \(item.seller?.nickname ?? "")")
