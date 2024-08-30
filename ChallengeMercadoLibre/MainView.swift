@@ -684,7 +684,7 @@ struct MainView: View {
             .scrollDismissesKeyboard(.interactively)
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(Material.thin)
+                    .fill(.gray.opacity(0.25))
                     .ignoresSafeArea()
             )
         }
@@ -858,13 +858,17 @@ struct ItemsByCategory: View {
     @State var listItems: [Item]?
     
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 150), spacing: 5), count: 2)) {
-                ForEach(listItems ?? [], id: \.id) { item in
-                    ItemView(item: item)
+        ZStack {
+            Color.gray.opacity(0.25)
+                .ignoresSafeArea()
+            ScrollView {
+                LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 150), spacing: 5), count: 2)) {
+                    ForEach(listItems ?? [], id: \.id) { item in
+                        ItemView(item: item)
+                    }
                 }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
@@ -1048,48 +1052,52 @@ struct DetailView: View {
         ]
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading) {
+        ZStack {
+            Color.gray.opacity(0.25)
+                .ignoresSafeArea()
+            ScrollView {
                 VStack(alignment: .leading) {
-                    if item.condition != .notSpecified || item.conditionTraduct != "" {
-                        Text(item.conditionTraduct)
-                            .font(.footnote)
-                            .foregroundStyle(.gray)
-                            .padding(.bottom, 3)
-                    }
-                    
-                    HStack {
-                        Text(item.title)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.leading)
-                        Spacer()
-                    }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.regular)
-                )
-                
-                if verticalSize == .regular {
-                    imageAndPrice
-                    
-                    attributes
-                } else {
-                   LazyVGrid(columns: columns) {
-                        VStack {
-                            imageAndPrice
+                    VStack(alignment: .leading) {
+                        if item.condition != .notSpecified || item.conditionTraduct != "" {
+                            Text(item.conditionTraduct)
+                                .font(.footnote)
+                                .foregroundStyle(.gray)
+                                .padding(.bottom, 3)
+                        }
+                        
+                        HStack {
+                            Text(item.title)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.leading)
                             Spacer()
                         }
-                       VStack {
-                           attributes
-                           Spacer()
-                       }
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Material.regular)
+                    )
+                    
+                    if verticalSize == .regular {
+                        imageAndPrice
+                        
+                        attributes
+                    } else {
+                        LazyVGrid(columns: columns) {
+                            VStack {
+                                imageAndPrice
+                                Spacer()
+                            }
+                            VStack {
+                                attributes
+                                Spacer()
+                            }
+                        }
                     }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
     }
     

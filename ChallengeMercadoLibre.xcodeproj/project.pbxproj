@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		06276C752C824B3500073CC5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 06276C742C824B3500073CC5 /* README.md */; };
+		06497EE32C825EB400ED1328 /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06497EE22C825EB400ED1328 /* SplashScreen.swift */; };
 		06AE35932C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */; };
 		06AE35972C7FF0A2008326AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35962C7FF0A2008326AD /* Assets.xcassets */; };
 		06AE359A2C7FF0A2008326AD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35992C7FF0A2008326AD /* Preview Assets.xcassets */; };
@@ -36,6 +37,7 @@
 
 /* Begin PBXFileReference section */
 		06276C742C824B3500073CC5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		06497EE22C825EB400ED1328 /* SplashScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreen.swift; sourceTree = "<group>"; };
 		06AE358F2C7FF0A1008326AD /* ChallengeMercadoLibre.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChallengeMercadoLibre.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeMercadoLibreApp.swift; sourceTree = "<group>"; };
 		06AE35962C7FF0A2008326AD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -74,6 +76,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		06497EDF2C825B6700ED1328 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		06497EE02C825B7400ED1328 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		06497EE12C825B7C00ED1328 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		06AE35862C7FF0A1008326AD = {
 			isa = PBXGroup;
 			children = (
@@ -100,7 +123,11 @@
 			children = (
 				06AE35C52C7FF3B4008326AD /* Info.plist */,
 				06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */,
+				06497EE12C825B7C00ED1328 /* Models */,
+				06497EE02C825B7400ED1328 /* ViewModels */,
+				06497EDF2C825B6700ED1328 /* Views */,
 				06AE35C32C7FF359008326AD /* MainView.swift */,
+				06497EE22C825EB400ED1328 /* SplashScreen.swift */,
 				06AE35962C7FF0A2008326AD /* Assets.xcassets */,
 				06AE35982C7FF0A2008326AD /* Preview Content */,
 			);
@@ -263,6 +290,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				06497EE32C825EB400ED1328 /* SplashScreen.swift in Sources */,
 				06AE35932C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift in Sources */,
 				06AE35C42C7FF359008326AD /* MainView.swift in Sources */,
 			);

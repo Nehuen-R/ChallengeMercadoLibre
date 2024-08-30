@@ -9,9 +9,22 @@ import SwiftUI
 
 @main
 struct ChallengeMercadoLibreApp: App {
+    @State var showMainView: Bool = false
+    
     var body: some Scene {
         WindowGroup {
-            MainView()
+            if showMainView {
+                MainView()
+            } else {
+                SplashScreen()
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation {
+                                self.showMainView = true                                
+                            }
+                        }
+                    }
+            }
         }
     }
 }
