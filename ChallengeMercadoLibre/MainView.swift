@@ -1039,8 +1039,14 @@ struct ItemView: View {
 }
 
 struct DetailView: View {
+    @Environment(\.verticalSizeClass) var verticalSize
     @Environment(\.colorScheme) var colorScheme
     var item: Item
+    let columns: [GridItem] = [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
@@ -1066,125 +1072,149 @@ struct DetailView: View {
                         .fill(Material.regular)
                 )
                 
-                AsyncImage(url: URL(string: item.thumbnail ?? "")) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(Material.regular)
-                        )
-                } placeholder: {
-                    ProgressView()
-                        .tint(.black)
-                        .frame(height: 300)
-                }
-                
-                VStack(alignment: .leading) {
-                    if item.originalPrice != nil {
-                        if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
-                            Text("\(item.currency == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
-                                .font(.subheadline)
-                                .foregroundStyle(.gray)
-                                .overlay {
-                                    Rectangle()
-                                        .fill(.gray)
-                                        .frame(height: 1)
-                                }
-                        } else {
-                            Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
-                                .font(.subheadline)
-                                .foregroundStyle(.gray)
-                                .overlay {
-                                    Rectangle()
-                                        .fill(.gray)
-                                        .frame(height: 1)
-                                }
-                        }
-                    }
-                    if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
-                        HStack {
-                            Text("\(item.currency == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.0f")")
-                                .font(.title)
-                                .foregroundStyle(.white)
-                            if item.originalPrice != nil {
-                                Text("\(item.percentage)%")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
-                            }
-                            Spacer()
-                        }
-                    } else {
-                        HStack {
-                            Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
-                                .font(.title)
-                                .foregroundStyle(.white)
-                            if item.originalPrice != nil {
-                                Text("\(item.percentage)%")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
-                            }
-                            Spacer()
-                        }
-                    }
-                    if item.shipping.free_shipping {
-                        Text("Envio gratis")
-                            .bold()
-                            .font(.footnote)
-                            .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
-                    }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.regular)
-                )
-                
-                
-                HStack {
-                    Text("Vendido por \(item.seller?.nickname ?? "")")
-                        .font(.subheadline)
-                        .bold()
-                    Spacer()
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.regular)
-                )
-                
-                VStack(alignment: .leading) {
-                    Text("Caracteristicas generales")
-                        .foregroundStyle(colorScheme == .light ? .black : .white)
-                        .font(.headline)
-                        .bold()
-                        .padding()
+                if verticalSize == .regular {
+                    imageAndPrice
                     
-                    ForEach(item.attributes, id: \.id) { attributes in
-                        HStack {
-                            Text(attributes.name)
-                                .font(.subheadline)
-                                .bold()
+                    attributes
+                } else {
+                   LazyVGrid(columns: columns) {
+                        VStack {
+                            imageAndPrice
                             Spacer()
-                            Text(attributes.value_name ?? "")
-                                .font(.subheadline)
                         }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(Material.regular)
-                        )
-                        .padding(.horizontal)
+                       VStack {
+                           attributes
+                           Spacer()
+                       }
                     }
                 }
-                .padding(.bottom)
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.regular)
-                )
             }
             .padding(.horizontal)
         }
+    }
+    
+    @ViewBuilder var imageAndPrice: some View {
+        VStack {
+            AsyncImage(url: URL(string: item.thumbnail ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Material.regular)
+                    )
+            } placeholder: {
+                ProgressView()
+                    .tint(.black)
+                    .frame(height: 300)
+            }
+            
+            VStack(alignment: .leading) {
+                if item.originalPrice != nil {
+                    if (item.originalPrice?.rounded() ?? 0) - (item.originalPrice ?? 0) > 0 {
+                        Text("\(item.currency == .ars ? "$" : "U$D") \(item.originalPrice ?? 0, specifier: "%.2f")")
+                            .font(.subheadline)
+                            .foregroundStyle(.gray)
+                            .overlay {
+                                Rectangle()
+                                    .fill(.gray)
+                                    .frame(height: 1)
+                            }
+                    } else {
+                        Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.originalPrice ?? 0))")
+                            .font(.subheadline)
+                            .foregroundStyle(.gray)
+                            .overlay {
+                                Rectangle()
+                                    .fill(.gray)
+                                    .frame(height: 1)
+                            }
+                    }
+                }
+                if (item.price?.rounded() ?? 0) - (item.price ?? 0) > 0 {
+                    HStack {
+                        Text("\(item.currency == .ars ? "$" : "U$D") \(item.price ?? 0, specifier: "%.0f")")
+                            .font(.title)
+                            .foregroundStyle(.white)
+                        if item.originalPrice != nil {
+                            Text("\(item.percentage)%")
+                                .font(.subheadline)
+                                .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                        }
+                        Spacer()
+                    }
+                } else {
+                    HStack {
+                        Text("\(item.currency == .ars ? "$" : "U$D") \(Int(item.price ?? 0))")
+                            .font(.title)
+                            .foregroundStyle(.white)
+                        if item.originalPrice != nil {
+                            Text("\(item.percentage)%")
+                                .font(.subheadline)
+                                .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                        }
+                        Spacer()
+                    }
+                }
+                if item.shipping.free_shipping {
+                    Text("Envio gratis")
+                        .bold()
+                        .font(.footnote)
+                        .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Material.regular)
+            )
+            
+            HStack {
+                Text("Vendido por \(item.seller?.nickname ?? "")")
+                    .font(.subheadline)
+                    .bold()
+                Spacer()
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Material.regular)
+            )
+        }
+    }
+    
+    @ViewBuilder var attributes: some View {
+        VStack(alignment: .leading) {
+            Text("Caracteristicas generales")
+                .foregroundStyle(colorScheme == .light ? .black : .white)
+                .font(.headline)
+                .bold()
+                .padding()
+            
+            ForEach(item.attributes, id: \.id) { attributes in
+                HStack {
+                    Text(attributes.name)
+                        .font(.subheadline)
+                        .bold()
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    Text(attributes.value_name ?? "")
+                        .font(.subheadline)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Material.regular)
+                )
+                .padding(.horizontal)
+            }
+        }
+        .padding(.bottom)
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(Material.regular)
+        )
     }
 }
