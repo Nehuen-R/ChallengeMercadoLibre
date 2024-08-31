@@ -13,6 +13,7 @@ enum PriceViewStyle {
 }
 
 struct PriceView: View {
+    @Environment(\.colorScheme) var colorScheme
     var style: PriceViewStyle
     var hasOriginalPrice: Bool
     var originalPrice: Double
@@ -58,7 +59,7 @@ struct PriceView: View {
                 
                 priceText
                     .font(style == .detail ? .title : .body)
-                    .foregroundStyle(style == .detail ? .white : .black)
+                    .foregroundStyle(style == .detail ? colorScheme == .light ? .black : .white : .black)
                 
                 if hasOriginalPrice {
                     Text("\(percentage)%")
