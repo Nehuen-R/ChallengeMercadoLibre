@@ -27,6 +27,8 @@
 		064774E92C8283A20099609B /* ItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 064774E82C8283A20099609B /* ItemViewModel.swift */; };
 		064774EB2C828CD10099609B /* PriceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 064774EA2C828CD10099609B /* PriceView.swift */; };
 		06497EE32C825EB400ED1328 /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06497EE22C825EB400ED1328 /* SplashScreen.swift */; };
+		0693CAA32C82A30200568989 /* Error+extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0693CAA22C82A30200568989 /* Error+extension.swift */; };
+		0693CAA52C82A32A00568989 /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0693CAA42C82A32A00568989 /* ErrorView.swift */; };
 		06AE35932C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */; };
 		06AE35972C7FF0A2008326AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35962C7FF0A2008326AD /* Assets.xcassets */; };
 		06AE359A2C7FF0A2008326AD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 06AE35992C7FF0A2008326AD /* Preview Assets.xcassets */; };
@@ -74,6 +76,8 @@
 		064774E82C8283A20099609B /* ItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemViewModel.swift; sourceTree = "<group>"; };
 		064774EA2C828CD10099609B /* PriceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceView.swift; sourceTree = "<group>"; };
 		06497EE22C825EB400ED1328 /* SplashScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreen.swift; sourceTree = "<group>"; };
+		0693CAA22C82A30200568989 /* Error+extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+extension.swift"; sourceTree = "<group>"; };
+		0693CAA42C82A32A00568989 /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		06AE358F2C7FF0A1008326AD /* ChallengeMercadoLibre.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChallengeMercadoLibre.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		06AE35922C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeMercadoLibreApp.swift; sourceTree = "<group>"; };
 		06AE35962C7FF0A2008326AD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -144,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				064774E42C8279450099609B /* Logger+extension.swift */,
+				0693CAA22C82A30200568989 /* Error+extension.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -159,6 +164,7 @@
 				064774DB2C8277580099609B /* ItemsByCategory.swift */,
 				064774EA2C828CD10099609B /* PriceView.swift */,
 				06AE35C32C7FF359008326AD /* MainView.swift */,
+				0693CAA42C82A32A00568989 /* ErrorView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -384,6 +390,7 @@
 				064774CA2C8274CC0099609B /* CarrouselServiceManager.swift in Sources */,
 				064774D62C8276F10099609B /* CarrouselView.swift in Sources */,
 				064774CE2C8275CB0099609B /* NavigationViewModel.swift in Sources */,
+				0693CAA52C82A32A00568989 /* ErrorView.swift in Sources */,
 				064774E52C8279450099609B /* Logger+extension.swift in Sources */,
 				064774D22C8276740099609B /* CarrouselViewModel.swift in Sources */,
 				06AE35932C7FF0A1008326AD /* ChallengeMercadoLibreApp.swift in Sources */,
@@ -396,6 +403,7 @@
 				064774E92C8283A20099609B /* ItemViewModel.swift in Sources */,
 				064774DA2C8277480099609B /* DetailView.swift in Sources */,
 				064774E22C82790D0099609B /* View+extension.swift in Sources */,
+				0693CAA32C82A30200568989 /* Error+extension.swift in Sources */,
 				064774D02C82765E0099609B /* MainViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

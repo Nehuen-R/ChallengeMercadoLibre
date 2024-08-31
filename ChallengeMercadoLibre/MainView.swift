@@ -7,42 +7,6 @@
 
 import SwiftUI
 
-enum GetErrors: Error {
-    case invalidUrl
-    case invalidResponse
-    case decodeError
-    case emptyError
-}
-
-struct ErrorView: View {
-    var error: Error
-    var errorString: String = ""
-    var retryAction: () -> Void
-    
-    var body: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Image(systemName: "xmark.circle")
-                    .foregroundStyle(.primary)
-                Text("Ocurrio un error inesperado\( errorString)")
-            }
-            Text("Por favor intenta de nuevo mas tarde")
-            Button(action:{
-                retryAction()
-            }){
-                Text("Reintentar")
-                    .padding()
-                    .background {
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(Material.thick)
-                    }
-            }
-            Spacer()
-        }
-    }
-}
-
 struct MainView: View {
     @StateObject var viewModel = MainViewModel()
     @StateObject var navigationViewModel = NavigationViewModel.shared
