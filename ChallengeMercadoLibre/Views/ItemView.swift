@@ -27,10 +27,8 @@ struct ItemView: View {
                     .frame(width: 175, height: 100)
             }
             Text(viewModel.getTitle())
-                .font(.caption)
-                .lineLimit(2)
+                .styleText(font: .caption, color: .black, lineLimit: 2)
                 .multilineTextAlignment(.leading)
-                .foregroundStyle(.black)
                 .frame(height: 35)
                 .redacted(reason: .placeholder)
                 .padding(.horizontal)
@@ -84,10 +82,8 @@ struct ItemView: View {
                         Spacer()
                     }
                     Text(viewModel.getTitle())
-                        .font(.caption)
-                        .lineLimit(2)
+                        .styleText(font: .caption, color: .black, lineLimit: 2)
                         .multilineTextAlignment(.leading)
-                        .foregroundStyle(.black)
                         .frame(height: 35, alignment: .topLeading)
                     PriceView(style: .item,
                               hasOriginalPrice: viewModel.hasOriginalPrice(),

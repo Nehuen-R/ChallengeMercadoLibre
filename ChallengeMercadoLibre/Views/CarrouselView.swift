@@ -28,16 +28,14 @@ struct CarrouselView: View {
             if isMock {
                     HStack {
                         Text(viewModel.category.name)
-                            .foregroundStyle(colorScheme == .light ? .black : .white)
+                            .styleText(font: .headline, color: colorScheme == .light ? .black : .white, bold: true)
                             .redacted(reason: .placeholder)
                             .shimmer()
                         Image(systemName: "chevron.right")
-                            .foregroundStyle(.gray)
+                            .styleText(font: .headline, color: .gray, bold: true)
                             .redacted(reason: .placeholder)
                             .shimmer()
                     }
-                    .font(.headline)
-                    .bold()
                     .padding(.bottom)
                 ScrollView(.horizontal) {
                     LazyHStack {
@@ -55,12 +53,11 @@ struct CarrouselView: View {
                 }) {
                     HStack {
                         Text(viewModel.category.name)
-                            .foregroundStyle(colorScheme == .light ? .black : .white)
+                            .styleText(font: .headline, color: colorScheme == .light ? .black : .white, bold: true)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.gray)
+                            .styleText(font: .headline, color: .gray, bold: true)
                     }
-                    .font(.headline)
-                    .bold()
                     .padding(.bottom)
                 }
                 ScrollView(.horizontal) {
@@ -74,12 +71,10 @@ struct CarrouselView: View {
             } else if error {
                 HStack {
                     Text(viewModel.category.name)
-                        .foregroundStyle(colorScheme == .light ? .black : .white)
+                        .styleText(font: .headline, color: colorScheme == .light ? .black : .white, bold: true)
                     Image(systemName: "chevron.right")
-                        .foregroundStyle(.gray)
+                        .styleText(font: .headline, color: .gray, bold: true)
                 }
-                .font(.headline)
-                .bold()
                 .padding(.bottom)
                 ErrorView(error: viewModel.error, errorString: viewModel.errorString) {
                     viewModel.getCarrouselData(category: viewModel.category)

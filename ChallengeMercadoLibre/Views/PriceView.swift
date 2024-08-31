@@ -40,8 +40,8 @@ struct PriceView: View {
                 }
 
                 priceText
-                    .font(style == .detail ? .subheadline : .caption)
-                    .foregroundStyle(.gray)
+                    .styleText(font: style == .detail ? .subheadline : .caption,
+                               color: .gray)
                     .overlay {
                         Rectangle()
                             .fill(.gray)
@@ -58,20 +58,18 @@ struct PriceView: View {
                 }
                 
                 priceText
-                    .font(style == .detail ? .title : .body)
-                    .foregroundStyle(style == .detail ? colorScheme == .light ? .black : .white : .black)
+                    .styleText(font: style == .detail ? .title : .body,
+                               color: style == .detail ? colorScheme == .light ? .black : .white : .black)
                 
                 if hasOriginalPrice {
                     Text("\(percentage)%")
-                        .font(style == .detail ? .subheadline : .caption)
-                        .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                        .styleText(font: style == .detail ? .subheadline : .caption,
+                                   color: Color("Green"))
                 }
             }
             if freeShipping {
                 Text("Envio gratis")
-                    .bold()
-                    .font(.footnote)
-                    .foregroundStyle(Color(uiColor: UIColor(red: 0.1, green: 0.8, blue: 0.4, alpha: 1)))
+                    .styleText(font: .footnote, color: Color("Green"), bold: true)
             }
         }
     }

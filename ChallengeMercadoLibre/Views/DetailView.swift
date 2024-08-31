@@ -21,15 +21,13 @@ struct DetailView: View {
                     VStack(alignment: .leading) {
                         if viewModel.showCondition() {
                             Text(viewModel.item.conditionTraduct)
-                                .font(.footnote)
-                                .foregroundStyle(.gray)
+                                .styleText(font: .footnote, color: .gray)
                                 .padding(.bottom, 3)
                         }
                         
                         HStack {
                             Text(viewModel.item.title)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
+                                .styleText(font: .headline, color: .primary)
                                 .multilineTextAlignment(.leading)
                             Spacer()
                         }
@@ -101,8 +99,7 @@ struct DetailView: View {
             
             HStack {
                 Text("Vendido por \(viewModel.getSellerNickname())")
-                    .font(.subheadline)
-                    .bold()
+                    .styleText(font: .subheadline, color: .primary, bold: true)
                 Spacer()
             }
             .padding()
@@ -116,32 +113,28 @@ struct DetailView: View {
     @ViewBuilder var attributes: some View {
         VStack(alignment: .leading) {
             Text("Caracteristicas generales")
-                .foregroundStyle(colorScheme == .light ? .black : .white)
-                .font(.headline)
-                .bold()
+                .styleText(font: .headline, color: colorScheme == .light ? .black : .white, bold: true)
                 .padding()
             
             ForEach(viewModel.getAttributes(), id: \.id) { attributes in
-                ZStack {
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(.gray.opacity(0.1))
                     HStack {
                         Text(attributes.name)
-                            .font(.subheadline)
-                            .bold()
-                            .lineLimit(nil)
+                            .styleText(font: .subheadline, color: .primary, bold: true, lineLimit: nil)
                             .multilineTextAlignment(.leading)
                         Spacer()
                         Text(attributes.value_name ?? "")
-                            .font(.subheadline)
+                            .styleText(font: .subheadline, color: .primary, lineLimit: nil)
                     }
                     .padding()
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Material.regular)
-                )
-                .padding(.horizontal)
+                    .background(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Material.regular)
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(.gray.opacity(0.1))
+                        }
+                    )
+                    .padding(.horizontal)
             }
         }
         .padding(.bottom)

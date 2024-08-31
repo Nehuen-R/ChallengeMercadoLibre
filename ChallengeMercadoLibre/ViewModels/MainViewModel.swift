@@ -83,3 +83,53 @@ final class MainViewModel: ObservableObject {
         searchServiceManager.getSearchedData(searchText: searchText)
     }
 }
+
+extension MainViewModel {
+    func showSearch(focusSearch: Bool) -> Bool {
+        !isSearching || focusSearch
+    }
+    
+    func navigationTitle(focusSearch: Bool) -> String {
+        showSearch(focusSearch: focusSearch) ? "Search" : "Categories"
+    }
+    
+    func resetSearch() {
+        searchText = ""
+        searched = false
+        searchData = .init(results: [])
+        searchState = .loading
+    }
+    
+    func showCancelButton() -> Bool {
+        !isSearching || searchState == .ready(data: searchData)
+    }
+    
+    func setSearchString(text: String) {
+        searchText = text
+        searched = true
+    }
+    
+    func searchIsStored() -> Bool {
+        searchedDataSave.contains(where: { $0.lowercased().contains(searchText.lowercased())})
+    }
+    
+    var searchStored: [String] {
+        searchedDataSave.filter({ $0.lowercased().contains(searchText.lowercased())})
+    }
+    
+    func emptyText() -> String {
+        "No se encontraron productos para la búsqueda: ‘\(searchText)’."
+    }
+    
+    func search() {
+        searched = true
+        getItemsBySearchText(searchText: searchText)
+        if !searchedDataSave.contains(where: {
+            $0.lowercased() == searchText.lowercased()
+        }) {
+            if !isSearching && searchText != " " {
+                searchedDataSave.append(searchText)
+            }
+        }
+    }
+}
