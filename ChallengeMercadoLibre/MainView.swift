@@ -9,13 +9,14 @@ import SwiftUI
 
 struct MainView: View {
     @StateObject var viewModel = MainViewModel()
+    @StateObject var searchViewModel = SearchViewModel()
     @StateObject var navigationViewModel = NavigationViewModel.shared
     @FocusState var focusSearch: Bool
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                if viewModel.showSearch(focusSearch: focusSearch) {
+                if searchViewModel.showSearch(focusSearch: focusSearch) {
                     searchState
                 } else {
                     mainState
@@ -23,7 +24,7 @@ struct MainView: View {
             }
             .navigationDestination(isPresented: $navigationViewModel.navigationIsActive,
                                    destination: { navigationViewModel.navigateTo })
-            .navigationTitle(viewModel.navigationTitle(focusSearch: focusSearch))
+            .navigationTitle(searchViewModel.navigationTitle(focusSearch: focusSearch))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top, content: { searchBar })
             .onAppear(perform: {
@@ -31,13 +32,13 @@ struct MainView: View {
             })
             .onSubmit {
                 focusSearch = false
-                viewModel.search()
+                searchViewModel.search()
             }
             .submitLabel(.search)
-            .onChange(of: viewModel.searched, { oldValue, newValue in
+            .onChange(of: searchViewModel.searched, { oldValue, newValue in
                 if newValue {
                     focusSearch = false
-                    viewModel.search()
+                    searchViewModel.search()
                 }
             })
             .scrollDismissesKeyboard(.interactively)
@@ -50,13 +51,13 @@ struct MainView: View {
     }
     
     @ViewBuilder var searchState: some View {
-        switch viewModel.searchState {
+        switch searchViewModel.searchState {
         case .loading:
-            if viewModel.isSearching {
-                    ForEach(viewModel.searchedDataSave, id: \.self) { item in
+            if searchViewModel.isSearching {
+                    ForEach(searchViewModel.searchedDataSave, id: \.self) { item in
                         Button(action: {
                             focusSearch = false
-                            viewModel.setSearchString(text: item)
+                            searchViewModel.setSearchString(text: item)
                         }) {
                             HStack {
                                 Text(item)
@@ -67,12 +68,12 @@ struct MainView: View {
                         }
                         .padding()
                     }
-            } else if !viewModel.isSearching {
-                if viewModel.searchIsStored() && focusSearch {
-                    ForEach(viewModel.searchStored, id: \.self) { item in
+            } else if !searchViewModel.isSearching {
+                if searchViewModel.searchIsStored() && focusSearch {
+                    ForEach(searchViewModel.searchStored, id: \.self) { item in
                         Button(action: {
                             focusSearch = false
-                            viewModel.setSearchString(text: item)
+                            searchViewModel.setSearchString(text: item)
                         }) {
                             HStack {
                                 Text(item)
@@ -83,7 +84,7 @@ struct MainView: View {
                         }
                         .padding()
                     }
-                } else if viewModel.searched {
+                } else if searchViewModel.searched {
                     VStack {
                         ProgressView()
                             .tint(.primary)
@@ -94,16 +95,16 @@ struct MainView: View {
             }
         case .empty:
             VStack {
-                Text(viewModel.emptyText())
+                Text(searchViewModel.emptyText())
             }
             .padding()
         case .error:
             ErrorView(error: viewModel.error) {
-                viewModel.getItemsBySearchText(searchText: viewModel.urlErrorForRetry)
+                searchViewModel.getItemsBySearchText(searchText: viewModel.urlErrorForRetry)
             }
         case .ready:
             LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 170), spacing: 5), count: 2)) {
-                ForEach(viewModel.searchData.results ?? [], id: \.id) { item in
+                ForEach(searchViewModel.searchData.results ?? [], id: \.id) { item in
                     ItemView(viewModel: ItemViewModel(item: item))
                 }
             }
@@ -136,7 +137,7 @@ struct MainView: View {
     
     @ViewBuilder var searchBar: some View {
         HStack {
-            TextField("Search", text: $viewModel.searchText, prompt: Text("Search..."))
+            TextField("Search", text: $searchViewModel.searchText, prompt: Text("Search..."))
                 .focused($focusSearch)
                 .onLongPressGesture(minimumDuration: 0.0) {
                     focusSearch = true
@@ -144,11 +145,11 @@ struct MainView: View {
                 .autocorrectionDisabled()
                 .overlay {
                         HStack {
-                            if !viewModel.isSearching {
+                            if !searchViewModel.isSearching {
                                 Spacer()
                                 Button {
                                     focusSearch = true
-                                    viewModel.resetSearch()
+                                    searchViewModel.resetSearch()
                                 } label: {
                                     Image(systemName: "multiply.circle.fill")
                                 }
@@ -157,10 +158,10 @@ struct MainView: View {
                         }
                     }
                 }
-            if focusSearch || viewModel.showCancelButton() {
+            if focusSearch || searchViewModel.showCancelButton() {
                 Button(action:{
                     focusSearch = false
-                    viewModel.resetSearch()
+                    searchViewModel.resetSearch()
                 }){
                     Text("Cancel")
                 }

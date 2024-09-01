@@ -12,4 +12,5 @@ enum GetErrors: Error {
     case invalidResponse
     case decodeError
     case emptyError
+    case noData
 }

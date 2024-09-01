@@ -48,7 +48,7 @@ final class SearchServiceManager {
             } catch let error {
                 Logger.GetErrors.fault("Error: \(error)")
                 searchState.send(.error(error: error,
-                                        errorString: " al realizar la busqueda",
+                                        errorString: " al realizar la busqueda de \(searchText)",
                                         url: "https://api.mercadolibre.com/sites/MLA/search?q=\(searchTextSpaced)"))
             }
         }

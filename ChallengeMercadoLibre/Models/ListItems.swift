@@ -65,6 +65,16 @@ struct Item: Codable {
         }
     }
     
+    var percentage: Int {
+        guard let originalPrice = originalPrice, originalPrice > 0, let price = price else {
+            return 0
+        }
+        
+        let discount = originalPrice - price
+        let discountPercentage = (discount / originalPrice) * 100
+        return Int(discountPercentage)
+    }
+    
     static let emptyItem: Item = Item(id: "1",
                                       title: "Skeleton",
                                       seller: Seller(id: 1, nickname: "Skeleton"),
@@ -145,16 +155,6 @@ struct Item: Codable {
             shipping: Shipping(free_shipping: true),
             attributes: []),
     ]
-    
-    var percentage: Int {
-        guard let originalPrice = originalPrice, originalPrice > 0, let price = price else {
-            return 0
-        }
-        
-        let discount = originalPrice - price
-        let discountPercentage = (discount / originalPrice) * 100
-        return Int(discountPercentage)
-    }
 }
 
 enum Currency: String, Codable {

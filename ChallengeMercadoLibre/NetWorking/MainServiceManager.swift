@@ -30,7 +30,11 @@ final class MainServiceManager {
     private (set) var mainState = CurrentValueSubject<MainState, Never>(.loading)
     
     func processData(data: [Categories]) {
-        mainState.send(.ready(data: data))
+        if data.count > 0 {
+            mainState.send(.ready(data: data))
+        } else {
+            mainState.send(.error(error: GetErrors.noData, errorString: ", no se encontro informacion para mostrar", url: "https://api.mercadolibre.com/sites/MLA/categories"))
+        }
     }
     
     func getCategories() {
