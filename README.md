@@ -26,7 +26,7 @@
 
     Open a terminal and run the following command:
     
-    git clone https://github.com/yourUsername/ChallengeMercadoLibre.git
+    git clone https://github.com/Nehuen-R/ChallengeMercadoLibre.git
     
     Or with the Source Control clone repository option
     
