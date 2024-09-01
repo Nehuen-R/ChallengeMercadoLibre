@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ErrorView: View {
+    @Environment(\.colorScheme) var colorScheme
     var error: Error
     var errorString: String = ""
     var retryAction: () -> Void
@@ -25,10 +26,15 @@ struct ErrorView: View {
                 retryAction()
             }){
                 Text("Reintentar")
+                    .foregroundStyle(colorScheme == .light ? .black : .white)
                     .padding()
                     .background {
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(Material.thick)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(.gray.opacity(0.5))
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Material.thick)
+                        }
                     }
             }
             Spacer()

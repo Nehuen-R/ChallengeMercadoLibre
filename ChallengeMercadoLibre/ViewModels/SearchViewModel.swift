@@ -95,11 +95,16 @@ extension SearchViewModel {
     func search() {
         searched = true
         getItemsBySearchText(searchText: searchText)
-        if !searchedDataSave.contains(where: {
+        if searchedDataSave.contains(where: {
             $0.lowercased() == searchText.lowercased()
         }) {
+            searchedDataSave.removeAll { item in
+                searchText.lowercased() == item.lowercased()
+            }
+            searchedDataSave.insert(searchText, at: 0)
+        } else {
             if !isSearching && searchText != " " {
-                searchedDataSave.append(searchText)
+                searchedDataSave.insert(searchText, at: 0)
             }
         }
     }
